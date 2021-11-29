@@ -1,9 +1,11 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const usersModel = require("./../../db/models/users");
 
 const SALT = Number(process.env.SALT);
+const SECRET = process.env.SECRETKEY;
 
 const register = async (req, res) => {
   const { email, password, role } = req.body;
@@ -40,7 +42,17 @@ const logIn = (req, res) => {
           const savedPassword = await bcrypt.compare(password, result.password);
 
           if (savedPassword) {
-            res.status(200).json(result);
+            const payload = {
+              role: result.role,
+            };
+
+            const options = {
+              expiresIn: "60m",
+            };
+
+            const token = await jwt.sign(payload, SECRET, options);
+
+            res.status(200).json({ result, token });
           } else {
             res.status(400).json("invalid email or password");
           }
